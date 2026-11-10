@@ -132,9 +132,8 @@ Craft Anything, from the earlier Python version.
 
 ## Contributing
 
-Issues and pull requests are welcome. Before sending a change, run `go vet ./...` and `npm test`, and keep it
-`gofmt`-formatted. Please never attach your own database, pictures, exports or `settings.json` to an issue: they hold
-your pledges and the addresses of people you gifted things to.
+Don't bother opening issues or pull requests. This does what I need it to do so I'm done with it. Feel free to fork it,
+steal it, make it your own. 
 
 ## Licence
 
