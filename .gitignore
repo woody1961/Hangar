@@ -1,0 +1,25 @@
+# Your data never goes into the repository: Hangar's folder, databases, pictures, backups and settings
+data/
+settings.json
+.settings-*.tmp
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+rsi-browser-profile/
+archive/
+backups/
+images/
+
+# Build leftovers (the downloads that are shared are release/Hangar-macOS.zip and release/Hangar-Windows.exe)
+/Hangar.app/
+/release/Hangar.app/
+/release/Hangar-Linux-*
+/dist/
+node_modules/
+
+# Computer clutter
+.DS_Store
+Thumbs.db
+*.test
+*.out

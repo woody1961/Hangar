@@ -1,0 +1,11 @@
+{
+  "name": "hangar-go",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Hangar as a desktop app written in Go: its window, database and RSI importer, for macOS, Windows and Linux.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "linux": "sh scripts/build-linux.sh release/Hangar-Linux-x64",
+    "test": "go vet ./... && go test ./..."
+  }
+}
