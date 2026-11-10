@@ -51,12 +51,6 @@ The Hangar window opens straight away. Close it to quit.
 
 The full guide is [docs/USER-GUIDE.md](docs/USER-GUIDE.md).
 
-## Already used the earlier Hangar?
-
-This is a Go rewrite of the earlier, browser-based Hangar (Python). It uses the same database and data folder, so
-your hangar opens as it is: on the welcome screen choose **Use an existing Hangar data folder…** and pick the old
-Hangar folder (or its `data` folder). Settings → Data and backups shows which folder is in use.
-
 ## Where your data lives
 
 | Computer | Folder |
