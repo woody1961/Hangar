@@ -20,6 +20,11 @@ own pledges, onto your own computer, when you import.
 - Using tools with your RSI account is your own choice and responsibility. Check RSI's terms of service if you're
   unsure.
 
+## Licence
+
+Hangar's own code is open source under the MIT License (see [LICENSE](LICENSE)). The licence covers the code only: it
+grants no rights to the Star Citizen, Roberts Space Industries or Cloud Imperium names or marks.
+
 ## No warranty
 
 Hangar is provided "as is", without warranty of any kind, express or implied, including but not limited to the

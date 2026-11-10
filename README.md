@@ -11,6 +11,8 @@ computer, needs nothing installed, and keeps your data on your computer.
 > Imperium Rights LLC and Cloud Imperium Rights Ltd. Hangar only reads your own account pages, in your own signed-in
 > browser, and sends them nowhere but into Hangar on your computer. It never sees or stores your RSI password.
 > It comes with no warranty: keep backups. See [NOTICE.md](NOTICE.md).
+>
+> Open source under the [MIT License](LICENSE).
 
 ## Download
 
@@ -128,7 +130,17 @@ If RSI redesigns its pledges page and an import finds nothing, the code to adjus
 Hangar was 100% vibe coded: it was written entirely by AI, with [Claude Code](https://claude.com/claude-code) and
 Craft Anything, from the earlier Python version.
 
+## Contributing
+
+Issues and pull requests are welcome. Before sending a change, run `go vet ./...` and `npm test`, and keep it
+`gofmt`-formatted. Please never attach your own database, pictures, exports or `settings.json` to an issue: they hold
+your pledges and the addresses of people you gifted things to.
+
 ## Licence
 
-No licence has been chosen yet, so all rights are reserved. The libraries Hangar is built with keep their own licences,
-listed in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+Hangar is open source under the [MIT License](LICENSE): you may use, copy, change and share it, including in your own
+projects, as long as the copyright and licence notice come along. It comes with no warranty.
+
+The libraries it is built with are open source too, each under its own licence (MIT, BSD, Unlicense, ISC, and MPL-2.0
+for one component of the SQLite library); they are listed in full in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+The trademarks named in [NOTICE.md](NOTICE.md) are not covered by the licence.

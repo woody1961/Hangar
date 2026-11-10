@@ -145,11 +145,15 @@ Hangar is an unofficial, fan-made tool. It is not affiliated with, endorsed or s
 Roberts Space Industries. Star Citizen®, Roberts Space Industries® and Cloud Imperium® are trademarks of Cloud Imperium
 Rights LLC and Cloud Imperium Rights Ltd. Hangar only reads your own account pages, in your own signed-in browser, and
 keeps everything on your computer. It is provided as is, with no warranty of any kind: keep backups, and use it at your
-own risk. The libraries it is built with are listed, with their licences, in THIRD_PARTY_LICENSES.md.
+own risk.
+
+Hangar is open source under the MIT License (LICENSE). The libraries it is built with are listed, with their licences,
+in THIRD_PARTY_LICENSES.md.
 
 Made entirely by AI ("vibe coded") with Claude Code and Craft Anything.
 `);
 copyFileSync(join(root, "THIRD_PARTY_LICENSES.md"), join(release, "THIRD_PARTY_LICENSES.md"));
+copyFileSync(join(root, "LICENSE"), join(release, "LICENSE"));
 // No website is made: Hangar is the desktop program above, with its own window. An old dist/ from earlier versions goes.
 rmSync(join(root, "dist"), { recursive: true, force: true });
 

@@ -280,7 +280,7 @@ See the next section.
 
 ### About
 
-The version, and the disclaimer below.
+The version, the licence (MIT, open source) and the disclaimer below.
 
 ### Settings that environment variables control
 
@@ -419,5 +419,5 @@ have no picture; those show a symbol. A picture that failed to download is tried
 
 Hangar is an unofficial, fan-made tool. It is not affiliated with, endorsed or sponsored by Cloud Imperium Games or
 Roberts Space Industries. Star Citizen®, Roberts Space Industries® and Cloud Imperium® are trademarks of Cloud Imperium
-Rights LLC and Cloud Imperium Rights Ltd. Hangar is provided as is, with no warranty; keep backups. See
-[NOTICE.md](../NOTICE.md).
+Rights LLC and Cloud Imperium Rights Ltd. Hangar is open source under the [MIT License](../LICENSE) and is provided as
+is, with no warranty; keep backups. See [NOTICE.md](../NOTICE.md).

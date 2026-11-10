@@ -11,7 +11,8 @@ done | sort -u)
   echo "# Third-party licences"
   echo
   echo "The Hangar programs are built with Go and include the libraries below. Each is used under its own licence,"
-  echo "reproduced here in full."
+  echo "reproduced here in full. The source code of each is public at its module path (look it up on https://pkg.go.dev),"
+  echo "at the version given."
   echo
   echo "## Go (the standard library and runtime)"
   echo
@@ -20,17 +21,20 @@ done | sort -u)
   echo '```'
   for m in $mods; do
     dir=$(go mod download -json "$m" | sed -n 's/.*"Dir": "\(.*\)".*/\1/p')
-    lic=$(ls "$dir" 2>/dev/null | grep -iE '^(LICEN[CS]E|COPYING|UNLICENSE)' | head -1)
+    files=$(ls "$dir" 2>/dev/null | grep -iE '^(LICEN[CS]E|COPYING|UNLICENSE|PATENTS)' || true)
     echo
     echo "## ${m%@*} (${m#*@})"
-    echo
-    if [ -n "$lic" ]; then
-      echo '```'
-      cat "$dir/$lic"
-      echo '```'
-    else
+    if [ -z "$files" ]; then
+      echo
       echo "No licence file found in the module; see its source repository."
     fi
+    for f in $files; do
+      echo
+      [ "$(echo "$files" | wc -l)" -gt 1 ] && echo "### $f" && echo
+      echo '```'
+      cat "$dir/$f"
+      echo '```'
+    done
   done
 } > "$OUT"
 echo "Wrote $OUT ($(echo "$mods" | wc -l | tr -d ' ') libraries)"

@@ -437,7 +437,7 @@ func (d *settingsDialog) layout(gtx C, a *App) {
 		section("About"),
 		layout.Rigid(func(gtx C) D {
 			return column(gtx,
-				layout.Rigid(func(gtx C) D { return l.plain(gtx, "Hangar "+version) }),
+				layout.Rigid(func(gtx C) D { return l.plain(gtx, "Hangar "+version+" · open source under the MIT License") }),
 				vspace(4),
 				layout.Rigid(func(gtx C) D { return l.text(gtx, disclaimer, textStyle{size: 12, color: l.p.text2}) }),
 			)
