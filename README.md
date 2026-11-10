@@ -18,8 +18,8 @@ computer, needs nothing installed, and keeps your data on your computer.
 
 | Computer | Download |
 |---|---|
-| Mac (macOS 11 or later, Apple Silicon and Intel) | [release/Hangar-macOS.zip](release/Hangar-macOS.zip) |
-| Windows 10 and 11 | [release/Hangar-Windows.exe](release/Hangar-Windows.exe) |
+| Mac (macOS 11 or later, Apple Silicon and Intel) | [Download Hangar-macOS.zip](release/Hangar-macOS.zip?raw=true) |
+| Windows 10 and 11 | [Download Hangar-Windows.exe](release/Hangar-Windows.exe?raw=true) |
 | Linux | Build it on Linux: see [Building from source](#building-from-source) |
 
 **Mac:** unzip, drag **Hangar** to Applications and open it. The app isn't from the App Store or notarised, so the
