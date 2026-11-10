@@ -46,8 +46,8 @@ Click **Import from RSI** (the blue button at the top, or the one on the welcome
 
 1. Click **Open RSI…**. Hangar opens a separate Chrome, Edge or Brave window on your RSI pledges page. Sign in there if
    asked. Your password goes to RSI's own page only. The window remembers you for next time.
-2. When your pledges are visible, come back to Hangar and click **Continue**. Hangar reads every page of your pledges
-   and your Hangar log (about a minute) and imports them.
+2. Navigate to your "My Hanger/My Gear" web page on the RSI site. When your pledges are visible, come back to Hangar and
+   click **Continue**. Hangar reads every page of your pledges and your Hangar log (about a minute) and imports them.
 
 Pictures download in the background afterwards; they appear in the list as they arrive, and a message says when they
 are all in. You can close the dialog meanwhile. A picture that can't be downloaded is tried again at the next import.
