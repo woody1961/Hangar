@@ -1,9 +1,11 @@
 package main
 
-// Pictures for the README, drawn off-screen from a made-up sample hangar (invented ships, makers and pictures), so no
-// one's real data ever appears in them. Run with HANGAR_DOCS_DIR set to the folder for the PNG files:
+// Pictures for the README, drawn off-screen. With HANGAR_DOCS_SOURCE set to a Hangar data folder they show that real
+// hangar, from a scrubbed copy: the folder itself is only read, and the copy loses every price, value, date, pledge ID,
+// ship ID, upgrade detail, gift recipient, note and custom ship name before anything is drawn. Without it, they show a
+// made-up sample hangar. Run with HANGAR_DOCS_DIR set to the folder for the PNG files:
 //
-//	HANGAR_DOCS_DIR=docs go test -run TestDocsScreenshots .
+//	HANGAR_DOCS_DIR=docs HANGAR_DOCS_SOURCE=~/Library/Application\ Support/Hangar/data go test -run TestDocsScreenshots .
 
 import (
 	"bytes"
@@ -126,37 +128,19 @@ func TestDocsScreenshots(t *testing.T) {
 	baseDir = home
 	setDataDir(filepath.Join(home, "data"))
 	setPort(configuredPort())
-	conn, err := connect()
-	if err != nil {
-		t.Fatal(err)
+	if source := os.Getenv("HANGAR_DOCS_SOURCE"); source != "" {
+		copyScrubbed(t, source)
+	} else {
+		makeSample(t)
 	}
-	store = conn
-	for _, p := range samplePackages {
-		pkg, err := createPackage(store, map[string]any{"name": p.name, "pledge_date": p.date, "purchase_value": p.purchase,
-			"value": p.value, "rsi_pledge_id": p.pledgeID, "status": p.status})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if p.status == "melted" {
-			updatePackage(store, num(pkg["id"]), map[string]any{"status_date": "2024-01-15", "status_note": "Store credit $50.00 USD"})
-		}
-		for _, it := range p.items {
-			row, err := createItem(store, map[string]any{"name": it.name, "type": it.typ, "manufacturer": it.maker, "purpose": it.purpose,
-				"insurance": it.insurance, "crew": it.crew, "storage_scu": it.scu, "flight_ready": it.flight, "package_id": float64(num(pkg["id"]))})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if it.picture > 0 {
-				if _, err := saveItemImage(num(row["id"]), samplePicture(it.picture), "image/jpeg"); err != nil {
-					t.Fatal(err)
-				}
-			}
-			if it.name == "Longhaul Freighter" {
-				store.Exec("UPDATE items SET upgrade_history = ? WHERE id = ?",
-					`[{"from":"Courier Mk I","to":"Longhaul Freighter","date":"2026-01-10T18:00","upgrade_id":"20000001","value":"$180.00 USD","price":"$40.00 USD"}]`, num(row["id"]))
-			}
-		}
-	}
+	// whatever is left that looks like money or an ID is hidden too, and the date and money columns are off
+	v := settingsValues()
+	v["hide_amounts"], v["hide_ids"] = true, true
+	v["hidden_columns"] = []any{"pledge_date", "purchase_value", "value", "pledge_id", "membership_id"}
+	v["thumb_size"], v["font_size"], v["density"] = "medium", "default", "comfortable"
+	settingsMu.Lock()
+	writeSettings(v)
+	settingsMu.Unlock()
 
 	a := newApp(new(app.Window))
 	a.reload()
@@ -196,11 +180,98 @@ func TestDocsScreenshots(t *testing.T) {
 	}
 	os.MkdirAll(out, 0o755)
 	shoot("screenshot-items.png", "light", func() { a.view.Mode = "items" })
-	shoot("screenshot-search.png", "light", func() { a.view.Query = "freighter"; a.search.SetText("freighter") })
+	query := "freighter"
+	if os.Getenv("HANGAR_DOCS_SOURCE") != "" {
+		query = "constellation"
+	}
+	shoot("screenshot-search.png", "light", func() { a.view.Query = query; a.search.SetText(query) })
 	shoot("screenshot-packages.png", "dark", func() { a.view.Query = ""; a.search.SetText(""); a.view.Mode = "packages" })
 	shoot("screenshot-import.png", "light", func() {
 		a.view.Mode = "items"
 		a.rsiDlg = &rsiDialog{stop: make(chan struct{}), checked: true, browser: "Google Chrome", open: true, onRSI: true, signedIn: true}
 	})
 	a.rsiDlg = nil
+}
+
+// copyScrubbed copies a real hangar (database and pictures) and removes from the copy everything personal or financial.
+func copyScrubbed(t *testing.T, source string) {
+	if err := os.MkdirAll(imageDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := copyDatabaseFile(filepath.Join(source, "ships.db"), dbPath); err != nil {
+		t.Fatal(err)
+	}
+	conn, err := connect()
+	if err != nil {
+		t.Fatal(err)
+	}
+	store = conn
+	for _, q := range []string{
+		"UPDATE packages SET pledge_date = NULL, value = NULL, purchase_value = NULL, rsi_pledge_id = NULL, status_date = NULL, " +
+			"status_note = NULL, gifted_to = NULL, notes = NULL, gift_pending = 0",
+		"UPDATE items SET membership_id = NULL, custom_name = NULL, notes = NULL",
+		"DELETE FROM meta",
+	} {
+		if _, err := store.Exec(q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// upgrades keep only which ship became which: no dates, prices, values or upgrade IDs
+	rows := mustRows(store, "SELECT id, upgrade_history FROM items WHERE upgrade_history IS NOT NULL")
+	for _, r := range rows {
+		steps := []map[string]string{}
+		for _, h := range parseHistory(txt(r["upgrade_history"])) {
+			steps = append(steps, map[string]string{"from": h.From, "to": h.To})
+		}
+		mustExec(store, "UPDATE items SET upgrade_history = ? WHERE id = ?", toJSON(steps), r["id"])
+	}
+	for _, r := range mustRows(store, "SELECT image FROM items WHERE image IS NOT NULL") {
+		name := filepath.Base(txt(r["image"]))
+		if st, err := os.Stat(filepath.Join(source, "images", name)); err == nil && st.Mode().IsRegular() {
+			copyFile(filepath.Join(source, "images", name), filepath.Join(imageDir, name), 0o644)
+		}
+	}
+	// nothing that was wiped may survive anywhere in the copy
+	left := queryInt(store, "SELECT COUNT(*) FROM packages WHERE pledge_date IS NOT NULL OR value IS NOT NULL OR purchase_value IS NOT NULL "+
+		"OR rsi_pledge_id IS NOT NULL OR gifted_to IS NOT NULL OR status_note IS NOT NULL OR notes IS NOT NULL")
+	left += queryInt(store, "SELECT COUNT(*) FROM items WHERE membership_id IS NOT NULL OR custom_name IS NOT NULL OR notes IS NOT NULL "+
+		"OR upgrade_history LIKE '%date%' OR upgrade_history LIKE '%price%' OR upgrade_history LIKE '%upgrade_id%'")
+	if left != 0 {
+		t.Fatalf("%d rows still hold personal or financial details", left)
+	}
+}
+
+func makeSample(t *testing.T) {
+	conn, err := connect()
+	if err != nil {
+		t.Fatal(err)
+	}
+	store = conn
+	for _, p := range samplePackages {
+		pkg, err := createPackage(store, map[string]any{"name": p.name, "pledge_date": p.date, "purchase_value": p.purchase,
+			"value": p.value, "rsi_pledge_id": p.pledgeID, "status": p.status})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if p.status == "melted" {
+			updatePackage(store, num(pkg["id"]), map[string]any{"status_date": "2024-01-15", "status_note": "Store credit $50.00 USD"})
+		}
+		for _, it := range p.items {
+			row, err := createItem(store, map[string]any{"name": it.name, "type": it.typ, "manufacturer": it.maker, "purpose": it.purpose,
+				"insurance": it.insurance, "crew": it.crew, "storage_scu": it.scu, "flight_ready": it.flight, "package_id": float64(num(pkg["id"]))})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if it.picture > 0 {
+				if _, err := saveItemImage(num(row["id"]), samplePicture(it.picture), "image/jpeg"); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if it.name == "Longhaul Freighter" {
+				store.Exec("UPDATE items SET upgrade_history = ? WHERE id = ?",
+					`[{"from":"Courier Mk I","to":"Longhaul Freighter","date":"2026-01-10T18:00","upgrade_id":"20000001","value":"$180.00 USD","price":"$40.00 USD"}]`, num(row["id"]))
+			}
+		}
+	}
+
 }

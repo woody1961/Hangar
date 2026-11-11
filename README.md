@@ -101,7 +101,8 @@ scripts/build-linux.sh                                                          
 More checks, run with environment variables: `HANGAR_LIVE_BROWSER=1` drives a real headless Chrome/Edge/Brave
 through the RSI window against a stand-in RSI site; `HANGAR_SNAPSHOT_DATA=<a copy of a Hangar folder>` exercises
 the window's actions on real data and, with `HANGAR_SNAPSHOT_DIR`, draws every screen to PNG files;
-`HANGAR_DOCS_DIR=docs` redraws the README pictures from an invented sample hangar.
+`HANGAR_DOCS_DIR=docs` redraws the README pictures (from an invented sample hangar, or with `HANGAR_DOCS_SOURCE` set
+to a Hangar data folder, from a copy of it with every price, value, date, ID, note and gift recipient removed).
 
 ### How it's built
 

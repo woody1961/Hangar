@@ -8,7 +8,9 @@ Games, Roberts Space Industries, or any of their affiliates.
 Star Citizen®, Squadron 42®, Roberts Space Industries® and Cloud Imperium® are registered trademarks of Cloud Imperium
 Rights LLC and Cloud Imperium Rights Ltd. Ship, manufacturer and item names that Hangar shows come from your own RSI
 account and belong to their owners. Hangar contains none of RSI's pictures or text: pictures are downloaded from your
-own pledges, onto your own computer, when you import.
+own pledges, onto your own computer, when you import. The pictures in this repository's `docs` folder show a real hangar,
+with RSI's ship and item pictures, as an example of what Hangar displays; those pictures and names belong to Cloud
+Imperium.
 
 ## What Hangar does with your RSI account
 
