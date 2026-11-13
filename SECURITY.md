@@ -3,13 +3,6 @@
 Hangar runs on your own computer and keeps your hangar there: it has no server, no account and no telemetry. Its
 security design is described under "Privacy and security" in the [README](README.md).
 
-## Reporting a problem
-
-Please report security problems privately, through this repository's **Security** tab ("Report a vulnerability"),
-rather than in a public issue. Say what you found, how to reproduce it, and which version (Settings → About). Please
-never attach your own database, pictures, exports or `settings.json`: they hold your pledges and the addresses of
-people you gifted things to.
-
 ## What is checked
 
 Before each release:
