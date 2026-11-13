@@ -9,6 +9,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"image"
 	"image/color"
 	"image/draw"
@@ -123,6 +124,13 @@ func TestDocsScreenshots(t *testing.T) {
 	out := os.Getenv("HANGAR_DOCS_DIR")
 	if out == "" {
 		t.Skip("set HANGAR_DOCS_DIR")
+	}
+	// the pictures show the release's version, as the built programs do
+	if pkg, err := os.ReadFile("package.json"); err == nil {
+		var meta struct{ Version string }
+		if json.Unmarshal(pkg, &meta) == nil && meta.Version != "" {
+			version = meta.Version
+		}
 	}
 	home := t.TempDir()
 	baseDir = home

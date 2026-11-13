@@ -418,7 +418,12 @@ func (a *App) sidebar(gtx C) D {
 		children := []layout.FlexChild{
 			layout.Rigid(func(gtx C) D {
 				return layout.Inset{Top: 4, Left: 10, Right: 10, Bottom: 12}.Layout(gtx, func(gtx C) D {
-					return a.look.text(gtx, "Hangar", textStyle{size: 17, weight: font.Bold})
+					// the version sits on the same baseline as the name, small and grey
+					return layout.Flex{Alignment: layout.Baseline}.Layout(gtx,
+						layout.Rigid(func(gtx C) D { return a.look.text(gtx, "Hangar", textStyle{size: 17, weight: font.Bold}) }),
+						hspace(6),
+						layout.Rigid(func(gtx C) D { return a.look.text(gtx, version, textStyle{size: 11, color: a.look.p.text3}) }),
+					)
 				})
 			}),
 			layout.Rigid(func(gtx C) D { return a.navHeading(gtx, "Library") }),
