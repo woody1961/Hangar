@@ -1,6 +1,6 @@
 {
   "name": "hangar-go",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": true,
   "license": "MIT",
   "description": "Hangar as a desktop app written in Go: its window, database and RSI importer, for macOS, Windows and Linux.",

@@ -1,4 +1,4 @@
-Hangar 2.0.0
+Hangar 2.0.1
 =========
 
 A desktop app for your Star Citizen hangar. Nothing to install: pick the one for your computer.
