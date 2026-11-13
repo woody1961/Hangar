@@ -98,13 +98,54 @@ func (c *thumbCache) load(k thumbKey, e *thumbEntry) {
 	}
 }
 
-func decodeFile(path string) (image.Image, error) {
-	data, err := os.ReadFile(path)
+// Pictures are decoded only after their header says they are a JPEG, PNG, GIF or WebP of a sensible size, so a small
+// file claiming enormous dimensions can't make Hangar run out of memory.
+const (
+	maxPictureSide   = 16384
+	maxPicturePixels = 40_000_000
+)
+
+var pictureFormats = map[string]string{"jpeg": "image/jpeg", "png": "image/png", "gif": "image/gif", "webp": "image/webp"}
+
+// checkPicture reads only a picture's header and returns its real type ("image/png"...), whatever it claims to be.
+func checkPicture(data []byte) (string, error) {
+	cfg, format, err := image.DecodeConfig(bytes.NewReader(data))
 	if err != nil {
+		return "", userErr("That isn't a picture Hangar can read (JPEG, PNG, GIF or WebP).")
+	}
+	ctype := pictureFormats[format]
+	if ctype == "" {
+		return "", userErr("That isn't a picture Hangar can read (JPEG, PNG, GIF or WebP).")
+	}
+	if cfg.Width <= 0 || cfg.Height <= 0 || cfg.Width > maxPictureSide || cfg.Height > maxPictureSide ||
+		int64(cfg.Width)*int64(cfg.Height) > maxPicturePixels {
+		return "", userErr("That picture is too large (%d×%d pixels).", cfg.Width, cfg.Height)
+	}
+	return ctype, nil
+}
+
+// decodePicture decodes a picture after checkPicture has accepted it.
+func decodePicture(data []byte) (image.Image, error) {
+	if _, err := checkPicture(data); err != nil {
 		return nil, err
 	}
 	img, _, err := image.Decode(bytes.NewReader(data))
 	return img, err
+}
+
+func decodeFile(path string) (image.Image, error) {
+	st, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	if st.Size() > 4*maxImageBytes {
+		return nil, userErr("That picture file is too large.")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	return decodePicture(data)
 }
 
 // cover scales a picture to fill size exactly, cropping what sticks out (like CSS object-fit: cover).
@@ -137,9 +178,9 @@ func contain(src image.Image, size image.Point) *image.RGBA {
 
 // shrinkForStorage keeps stored pictures small: at most 480 px on the long side, saved as JPEG.
 func shrinkForStorage(data []byte) ([]byte, string, error) {
-	img, _, err := image.Decode(bytes.NewReader(data))
+	img, err := decodePicture(data)
 	if err != nil {
-		return nil, "", userErr("Couldn't read that picture.")
+		return nil, "", err
 	}
 	b := img.Bounds()
 	scale := min64(1, 480/max64(float64(b.Dx()), float64(b.Dy())))

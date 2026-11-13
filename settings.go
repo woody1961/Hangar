@@ -218,7 +218,7 @@ func settingBool(key string) bool {
 func writeSettings(data map[string]any) error {
 	path := settingsPath()
 	folder := filepath.Dir(path)
-	if err := os.MkdirAll(folder, 0o755); err != nil {
+	if err := os.MkdirAll(folder, 0o700); err != nil {
 		return err
 	}
 	keys := make([]string, 0, len(data))

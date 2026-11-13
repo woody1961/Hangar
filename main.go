@@ -67,7 +67,7 @@ func chooseBaseDir() string {
 	}
 	if cfg, err := os.UserConfigDir(); err == nil {
 		dir := filepath.Join(cfg, "Hangar")
-		if os.MkdirAll(dir, 0o755) == nil {
+		if os.MkdirAll(dir, 0o700) == nil {
 			return dir
 		}
 	}
@@ -82,6 +82,7 @@ func main() {
 		return
 	}
 	baseDir = chooseBaseDir()
+	protect(baseDir) // it holds settings.json and the data folder: this person's account only
 	setDataDir(chooseDataDir())
 	setPort(configuredPort())
 	dailyBackup()

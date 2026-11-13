@@ -146,7 +146,7 @@ func openDB(path string, readOnly bool) (*sql.DB, error) {
 }
 
 func connect() (*sql.DB, error) {
-	if err := os.MkdirAll(imageDir, 0o755); err != nil {
+	if err := os.MkdirAll(imageDir, 0o700); err != nil {
 		return nil, err
 	}
 	protect(dataDir)

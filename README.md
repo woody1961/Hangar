@@ -78,6 +78,8 @@ these.
 - The data folder is made private to you on macOS and Linux. Nothing is encrypted: anyone who can sign in to your
   computer as you can open Hangar. Exports and backups contain everything, including who you gifted things to.
 
+To report a security problem, see [SECURITY.md](SECURITY.md).
+
 ## Building from source
 
 You need [Go](https://go.dev) 1.25 or later and [Node.js](https://nodejs.org) (for the build script). On a Mac, also

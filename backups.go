@@ -68,7 +68,7 @@ func snapshot(label string, keep int) (string, error) {
 	if !fileExists(dbPath) {
 		return "", nil
 	}
-	if err := os.MkdirAll(backupDir, 0o755); err != nil {
+	if err := os.MkdirAll(backupDir, 0o700); err != nil {
 		return "", err
 	}
 	stamp := time.Now().Format("20060102-150405")
@@ -117,7 +117,7 @@ func dailyBackup() {
 	if !fileExists(dbPath) {
 		return
 	}
-	os.MkdirAll(backupDir, 0o755)
+	os.MkdirAll(backupDir, 0o700)
 	target := filepath.Join(backupDir, "ships-"+time.Now().Format("2006-01-02")+".db")
 	if !fileExists(target) {
 		if err := copyDatabaseFile(dbPath, target); err != nil {
@@ -285,7 +285,7 @@ func replaceDatabase(newFile string) error {
 // database. Nothing is destroyed: copy the files back to return to the old data.
 func freshStart() (string, error) {
 	folder := filepath.Join(dataDir, "archive", time.Now().Format("20060102-150405"))
-	if err := os.MkdirAll(folder, 0o755); err != nil {
+	if err := os.MkdirAll(folder, 0o700); err != nil {
 		return "", err
 	}
 	if err := copyDatabase(store, filepath.Join(folder, "ships.db")); err != nil {
@@ -296,7 +296,7 @@ func freshStart() (string, error) {
 			return "", err
 		}
 	}
-	os.MkdirAll(imageDir, 0o755)
+	os.MkdirAll(imageDir, 0o700)
 	tx, err := store.Begin()
 	if err != nil {
 		return "", err
@@ -335,7 +335,7 @@ func copyTree(src, dst string) error {
 		rel, _ := filepath.Rel(src, path)
 		target := filepath.Join(dst, rel)
 		if info.IsDir() {
-			return os.MkdirAll(target, 0o755)
+			return os.MkdirAll(target, 0o700)
 		}
 		if !info.Mode().IsRegular() {
 			return nil // links and sockets (a browser profile has some) are not data
@@ -389,7 +389,7 @@ func moveDataDir(targetArg any) (map[string]any, error) {
 	if fileExists(target) && !isDir(target) {
 		return nil, userErr("That path is a file, not a folder")
 	}
-	if err := os.MkdirAll(target, 0o755); err != nil {
+	if err := os.MkdirAll(target, 0o700); err != nil {
 		return nil, userErr("Hangar can't write to that folder")
 	}
 	if !canWrite(target) {

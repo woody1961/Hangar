@@ -107,6 +107,9 @@ func findBrowser() *browserInfo {
 	return nil
 }
 
+// maxBrowserMessage caps one message from the browser (a whole hangar read is a few megabytes).
+const maxBrowserMessage = 256 << 20
+
 // ---------- the smallest WebSocket client that can talk to the browser's debugging port ----------
 
 type wsConn struct {
@@ -199,6 +202,9 @@ func (w *wsConn) recv() (string, error) {
 		}
 		if head[1]&0x80 != 0 { // servers don't mask; skip a mask if one is sent
 			io.ReadFull(w.r, make([]byte, 4))
+		}
+		if n > maxBrowserMessage || uint64(len(message))+n > maxBrowserMessage {
+			return "", errors.New("the browser sent a message that is too large")
 		}
 		payload := make([]byte, n)
 		if _, err := io.ReadFull(w.r, payload); err != nil {
@@ -454,7 +460,7 @@ func (w *rsiWindow) open() (string, error) {
 		}
 		return found.Name, nil
 	}
-	os.MkdirAll(profileDir(), 0o755)
+	os.MkdirAll(profileDir(), 0o700)
 	portFile := filepath.Join(profileDir(), "DevToolsActivePort")
 	os.Remove(portFile)
 	args := []string{"--user-data-dir=" + profileDir(), "--remote-debugging-port=0", "--no-first-run",
@@ -639,7 +645,7 @@ window.__hangarOut = null; window.__hangarProgress = null;
 			}
 		}
 	}
-	return nil, errors.New("Reading RSI took too long. Try again.")
+	return nil, userErr("Reading RSI took too long. Try again.")
 }
 
 func mustURL(s string) *url.URL {

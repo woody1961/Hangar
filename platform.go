@@ -24,7 +24,7 @@ func openBrowser(url string) {
 }
 
 func openFolder(path string) error {
-	if err := os.MkdirAll(path, 0o755); err != nil {
+	if err := os.MkdirAll(path, 0o700); err != nil {
 		return err
 	}
 	var cmd *exec.Cmd

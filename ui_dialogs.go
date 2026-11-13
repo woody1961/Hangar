@@ -375,9 +375,9 @@ func (d *itemDialog) layout(gtx C, a *App) {
 func imageDirPath(name string) string { return imageDir + string(osSep) + baseName(name) }
 
 func (d *itemDialog) setPicture(data []byte, ctype string) {
-	img, _, err := image.Decode(strings.NewReader(string(data)))
+	img, err := decodePicture(data)
 	if err != nil {
-		d.errText = "Couldn't read that picture."
+		d.errText = errorText(err)
 		return
 	}
 	op := paint.NewImageOp(contain(img, image.Pt(660, 495)))

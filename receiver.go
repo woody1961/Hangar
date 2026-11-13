@@ -141,21 +141,23 @@ func downloadWithRetry(rawURL string) ([]byte, string, error) {
 }
 
 // saveItemImage stores image bytes for an item. The caller holds dbMu.
-func saveItemImage(id int64, data []byte, ctype string) (row, error) {
-	ext := imageTypes[strings.ToLower(strings.TrimSpace(strings.Split(ctype, ";")[0]))]
-	if ext == "" {
-		return nil, userErr("Unsupported image type")
-	}
+// The picture's own bytes decide what it is and its file extension, not the type the other site claimed.
+func saveItemImage(id int64, data []byte, _ string) (row, error) {
 	if len(data) == 0 || len(data) > maxImageBytes {
 		return nil, userErr("Image is empty or larger than 5 MB")
 	}
+	ctype, err := checkPicture(data)
+	if err != nil {
+		return nil, err
+	}
+	ext := imageTypes[ctype]
 	if getRow(store, "items", id) == nil {
 		return nil, errNotFound
 	}
 	token := make([]byte, 4)
 	rand.Read(token)
 	filename := fmt.Sprintf("item%d-%s%s", id, hex.EncodeToString(token), ext)
-	if err := os.WriteFile(filepath.Join(imageDir, filename), data, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(imageDir, filename), data, 0o600); err != nil {
 		return nil, err
 	}
 	return setItemImage(store, id, filename)
@@ -416,15 +418,16 @@ func startReceiver(a *App) {
 		receiverErr = fmt.Sprintf("port %d is used by another program; change the port in Settings", port)
 		return
 	}
-	receiver = &http.Server{ReadHeaderTimeout: 30 * time.Second, Handler: receiverHandler(func(s *importSummary) {
-		a.post(func() {
-			a.reload()
-			a.toast(fmt.Sprintf("Imported %d pledges from the bookmark", s.Pledges))
-			if a.rsiDlg != nil {
-				a.rsiDlg.showResult(a, s)
-			}
-		})
-	})}
+	receiver = &http.Server{ReadHeaderTimeout: 30 * time.Second, ReadTimeout: 2 * time.Minute, WriteTimeout: 5 * time.Minute,
+		IdleTimeout: 2 * time.Minute, MaxHeaderBytes: 64 << 10, Handler: receiverHandler(func(s *importSummary) {
+			a.post(func() {
+				a.reload()
+				a.toast(fmt.Sprintf("Imported %d pledges from the bookmark", s.Pledges))
+				if a.rsiDlg != nil {
+					a.rsiDlg.showResult(a, s)
+				}
+			})
+		})}
 	go receiver.Serve(l)
 }
 
@@ -487,7 +490,7 @@ func writeCSV(out io.Writer) error {
 		if cost != 0 {
 			costText = pyFloat(cost)
 		}
-		rec = append(rec, originally, costText, strings.Join(ids, " "))
+		rec = append(rec, csvText(originally), costText, strings.Join(ids, " "))
 		cw.Write(rec)
 	}
 	cw.Flush()
@@ -503,7 +506,19 @@ func csvValue(v any) string {
 	case float64:
 		return pyFloat(x)
 	case string:
-		return x
+		return csvText(x)
 	}
-	return fmt.Sprint(v)
+	return csvText(fmt.Sprint(v))
+}
+
+// csvText stops a spreadsheet from running text as a formula: a name or note that starts with =, +, -, @, a tab or a
+// carriage return gets a leading apostrophe, which spreadsheets show as plain text. Plain numbers are left alone.
+func csvText(s string) string {
+	if s == "" || !strings.ContainsAny(s[:1], "=+-@\t\r") {
+		return s
+	}
+	if _, err := strconv.ParseFloat(s, 64); err == nil {
+		return s
+	}
+	return "'" + s
 }

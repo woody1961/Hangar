@@ -683,7 +683,7 @@ func (a *App) export(kind string) {
 		out, err := a.explorer.CreateFile(name)
 		if err == explorer.ErrNotAvailable {
 			path := downloadsPath(name)
-			if err = os.WriteFile(path, data, 0o644); err == nil {
+			if err = os.WriteFile(path, data, 0o600); err == nil {
 				a.post(func() { a.toast("Saved " + path) })
 				revealFile(path)
 			}
