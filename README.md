@@ -22,8 +22,16 @@ computer, needs nothing installed, and keeps your data on your computer.
 | Windows 10 and 11 | [Download Hangar-Windows.exe](release/Hangar-Windows.exe?raw=true) |
 | Linux | Build it on Linux: see [Building from source](#building-from-source) |
 
-**Mac:** unzip, drag **Hangar** to Applications and open it. The app isn't from the App Store or notarised, so the
-first time macOS may say it can't check it: right-click Hangar, choose **Open**, then **Open** again.
+**Mac:** unzip, drag **Hangar** to Applications and open it. The first time, macOS says it can't check Hangar for
+malicious software, because the app isn't notarised by Apple (that needs a paid Apple developer account). On macOS 15
+and later, right-clicking and choosing Open no longer gets past this. Instead, either:
+
+- open **System Settings → Privacy & Security**, scroll down to *"Hangar" was blocked to protect your Mac*, click
+  **Open Anyway** and confirm with your password; or
+- in Terminal, run `xattr -dr com.apple.quarantine /Applications/Hangar.app`, which removes the "downloaded from the
+  internet" mark from Hangar only.
+
+After that it opens normally.
 
 **Windows:** double-click **Hangar-Windows.exe**. If SmartScreen warns about an unknown publisher, choose
 **More info**, then **Run anyway**.

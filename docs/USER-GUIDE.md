@@ -28,7 +28,7 @@ Everything stays on your computer. Hangar never sees or stores your RSI password
 
 | Computer | Install and start |
 |---|---|
-| Mac | Unzip **Hangar-macOS.zip**, drag **Hangar** to Applications, and open it from there or from Launchpad. The first time, right-click it and choose **Open** (macOS asks because the app isn't notarised). |
+| Mac | Unzip **Hangar-macOS.zip**, drag **Hangar** to Applications, and open it from there or from Launchpad. The first time macOS blocks it: see *macOS says it can't check Hangar* in [Troubleshooting](#13-troubleshooting). |
 | Windows | Double-click **Hangar-Windows.exe**. If SmartScreen warns about an unknown publisher, choose **More info**, then **Run anyway**. You can keep the file anywhere, for example in a folder under Documents, and pin it to the taskbar once it's running. |
 | Linux | Build it once with `scripts/build-linux.sh` (see the README), then run `./Hangar-Linux-x64`. |
 
@@ -386,8 +386,15 @@ database, so be careful where you send them.
 
 ## 13. Troubleshooting
 
-**macOS says the app can't be opened or checked.** Right-click Hangar, choose **Open**, then **Open** again. This is
-needed once, because the app isn't notarised by Apple.
+**macOS says it can't check Hangar.** This happens once, because the app isn't notarised by Apple. On macOS 15 and
+later, right-clicking and choosing Open no longer gets past it. Instead, either:
+
+- open **System Settings → Privacy & Security**, scroll down to *"Hangar" was blocked to protect your Mac*, click
+  **Open Anyway** and confirm with your password; or
+- in Terminal, run `xattr -dr com.apple.quarantine /Applications/Hangar.app`, which removes the "downloaded from the
+  internet" mark from Hangar only.
+
+After that it opens normally.
 
 **Windows SmartScreen warns about an unknown publisher.** Choose **More info**, then **Run anyway**.
 

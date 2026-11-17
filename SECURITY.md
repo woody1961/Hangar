@@ -21,5 +21,6 @@ Before each release:
   `localhost`, and accepts imports only from RSI's own site or Hangar itself.
 - Nothing is encrypted at rest. Hangar's folder is made private to your account on macOS and Linux; anyone who can
   sign in as you can read it. Exports and backups contain everything, including gift recipients.
-- The release programs are not signed by a recognised publisher (the Mac app is signed locally, not notarised), so
+- The release programs are not signed by a recognised publisher (the Mac app is signed locally, not notarised; the
+  build notarises it when given an Apple Developer ID, see `scripts/build.mjs`), so
   macOS and Windows warn the first time you open them. Download them only from this repository.

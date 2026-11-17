@@ -73,10 +73,31 @@ if (process.platform === "darwin") {
 </dict>
 </plist>
 `);
-  // a local signature, so macOS lets it run on Apple Silicon (it is not notarised: see README.txt)
+  // Signing. With an Apple Developer ID (HANGAR_MAC_SIGN_IDENTITY, e.g. "Developer ID Application: Name (TEAMID)")
+  // the app is signed for distribution, and with a notarytool keychain profile (HANGAR_NOTARY_PROFILE, made once with
+  // `xcrun notarytool store-credentials`) it is also notarised by Apple, so macOS opens it without any warning.
+  // Without them it gets a local signature, which runs on Apple Silicon but which macOS blocks the first time (see
+  // README.txt for the way past that).
   try { execFileSync("xattr", ["-cr", app]); } catch { /* nothing to clear */ }
-  execFileSync("codesign", ["--force", "--deep", "-s", "-", app]);
-  execFileSync("ditto", ["-c", "-k", "--norsrc", "--noextattr", "--keepParent", app, join(release, "Hangar-macOS.zip")]);
+  const zipPath = join(release, "Hangar-macOS.zip");
+  const zipApp = () => {
+    rmSync(zipPath, { force: true });
+    execFileSync("ditto", ["-c", "-k", "--norsrc", "--noextattr", "--keepParent", app, zipPath]);
+  };
+  const identity = process.env.HANGAR_MAC_SIGN_IDENTITY;
+  if (identity) {
+    execFileSync("codesign", ["--force", "--deep", "--options", "runtime", "--timestamp", "-s", identity, app], { stdio: "inherit" });
+    zipApp();
+    if (process.env.HANGAR_NOTARY_PROFILE) {
+      console.log("Sending Hangar to Apple to be notarised (this takes a few minutes)");
+      execFileSync("xcrun", ["notarytool", "submit", zipPath, "--keychain-profile", process.env.HANGAR_NOTARY_PROFILE, "--wait"], { stdio: "inherit" });
+      execFileSync("xcrun", ["stapler", "staple", app], { stdio: "inherit" });
+      zipApp(); // the zip now holds the app with Apple's ticket attached
+    }
+  } else {
+    execFileSync("codesign", ["--force", "--deep", "-s", "-", app]);
+    zipApp();
+  }
   execFileSync("ditto", [app, join(release, "Hangar.app")]);
   // a copy right at the top of the app folder, so it's the first thing you see when you open the folder
   rmSync(join(root, "Hangar.app"), { recursive: true, force: true });
@@ -110,15 +131,18 @@ A desktop app for your Star Citizen hangar. Nothing to install: pick the one for
 
 How to start it
 ---------------
-Mac: double-click Hangar.app. (To keep it, drag it into your Applications folder first, then start it from there or
-from Launchpad. If macOS says it can't check the app, right-click it, choose Open, then Open again.)
+Mac: drag Hangar.app into your Applications folder, then start it from there or from Launchpad.
+If macOS says it can't check Hangar: open System Settings > Privacy & Security, scroll down to
+"Hangar" was blocked, click Open Anyway and confirm with your password. Or run this in Terminal:
+  xattr -dr com.apple.quarantine /Applications/Hangar.app
+(Right-click > Open no longer works for this on macOS 15 and later.) This is needed once, because the app isn't
+notarised by Apple.
 Windows: double-click Hangar-Windows.exe.
 The Hangar window opens straight away; no browser is needed. Close the window to quit.
 
 ${built.map((b) => "  " + b).join("\n")}
 ${skipped.length ? "\nNot built here:\n" + skipped.map((s) => "  " + s).join("\n") + "\n" : ""}
-Mac: unzip Hangar-macOS.zip and drag Hangar to Applications. The first time, right-click it and choose Open
-(macOS warns because the app isn't from the App Store or notarised).
+Mac: unzip Hangar-macOS.zip and drag Hangar to Applications (see above if macOS blocks it the first time).
 Windows: double-click Hangar-Windows.exe. If SmartScreen warns about an unknown publisher, choose More info, then
 Run anyway.
 Linux: on the Linux computer, run scripts/build-linux.sh from the source folder (it needs Go and the packages it lists),

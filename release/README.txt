@@ -5,8 +5,12 @@ A desktop app for your Star Citizen hangar. Nothing to install: pick the one for
 
 How to start it
 ---------------
-Mac: double-click Hangar.app. (To keep it, drag it into your Applications folder first, then start it from there or
-from Launchpad. If macOS says it can't check the app, right-click it, choose Open, then Open again.)
+Mac: drag Hangar.app into your Applications folder, then start it from there or from Launchpad.
+If macOS says it can't check Hangar: open System Settings > Privacy & Security, scroll down to
+"Hangar" was blocked, click Open Anyway and confirm with your password. Or run this in Terminal:
+  xattr -dr com.apple.quarantine /Applications/Hangar.app
+(Right-click > Open no longer works for this on macOS 15 and later.) This is needed once, because the app isn't
+notarised by Apple.
 Windows: double-click Hangar-Windows.exe.
 The Hangar window opens straight away; no browser is needed. Close the window to quit.
 
@@ -16,8 +20,7 @@ The Hangar window opens straight away; no browser is needed. Close the window to
 Not built here:
   Linux: needs a Linux computer or Docker (run scripts/build-linux.sh there)
 
-Mac: unzip Hangar-macOS.zip and drag Hangar to Applications. The first time, right-click it and choose Open
-(macOS warns because the app isn't from the App Store or notarised).
+Mac: unzip Hangar-macOS.zip and drag Hangar to Applications (see above if macOS blocks it the first time).
 Windows: double-click Hangar-Windows.exe. If SmartScreen warns about an unknown publisher, choose More info, then
 Run anyway.
 Linux: on the Linux computer, run scripts/build-linux.sh from the source folder (it needs Go and the packages it lists),
