@@ -52,9 +52,12 @@ func pickFolder() (string, error) {
 		cmd = exec.Command("osascript", "-e", `tell application "System Events" to activate`,
 			"-e", `POSIX path of (choose folder with prompt "`+prompt+`")`)
 	case "windows":
+		// (only used when Windows' own folder dialog can't be shown; see App.chooseFolder). In a PowerShell '...'
+		// string an apostrophe is written twice, or "Hangar's" would end the text and break the script.
 		script := "Add-Type -AssemblyName System.Windows.Forms; $d = New-Object System.Windows.Forms.FolderBrowserDialog; " +
-			"$d.Description = '" + prompt + "'; if ($d.ShowDialog() -eq 'OK') { $d.SelectedPath }"
-		cmd = exec.Command("powershell", "-NoProfile", "-STA", "-Command", script)
+			"$d.Description = '" + strings.ReplaceAll(prompt, "'", "''") + "'; if ($d.ShowDialog() -eq 'OK') { $d.SelectedPath }"
+		cmd = exec.Command("powershell", "-NoProfile", "-NonInteractive", "-STA", "-Command", script)
+		hideWindow(cmd) // no console window flashing up behind the dialog
 	default:
 		if p, err := exec.LookPath("zenity"); err == nil {
 			cmd = exec.Command(p, "--file-selection", "--directory", "--title="+prompt)
@@ -67,8 +70,8 @@ func pickFolder() (string, error) {
 	}
 	out, err := cmd.Output()
 	if err != nil {
-		if _, isExit := err.(*exec.ExitError); isExit {
-			return "", nil // the dialog was cancelled
+		if _, isExit := err.(*exec.ExitError); isExit && runtime.GOOS != "windows" {
+			return "", nil // the dialog was cancelled (PowerShell instead prints nothing and succeeds)
 		}
 		return "", userErr("The folder picker couldn't be opened. Type the folder instead.")
 	}

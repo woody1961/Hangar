@@ -112,7 +112,7 @@ func (d *settingsDialog) layout(gtx C, a *App) {
 	if d.pick.Clicked(gtx) && !d.busy {
 		d.say("Waiting for you to choose a folder…", false)
 		go func() {
-			path, err := pickFolder()
+			path, err := a.chooseFolder()
 			a.post(func() {
 				switch {
 				case err != nil:
@@ -614,7 +614,7 @@ func (d *settingsDialog) moveData(a *App, path string) {
 // useExistingFolder: on the welcome screen, point Hangar at a data folder made before (by this or the earlier Hangar).
 func (a *App) useExistingFolder() {
 	go func() {
-		path, err := pickFolder()
+		path, err := a.chooseFolder()
 		if err != nil || path == "" {
 			if err != nil {
 				a.post(func() { a.toast(errorText(err)) })

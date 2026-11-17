@@ -3,10 +3,12 @@ package main
 // The desktop window: sidebar, toolbar and the Items / Packages views, with the dialogs on top.
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -739,6 +741,21 @@ func (a *App) watchPictures() {
 			}
 		})
 	}
+}
+
+// chooseFolder asks for a folder. On Windows that is Windows' own folder dialog, attached to Hangar's window; macOS and
+// Linux use their system pickers (pickFolder), as does Windows if its dialog can't be shown. "" means cancelled.
+func (a *App) chooseFolder() (string, error) {
+	if runtime.GOOS == "windows" {
+		path, err := a.explorer.ChooseFolder()
+		switch {
+		case err == nil:
+			return path, nil
+		case errors.Is(err, explorer.ErrUserDecline):
+			return "", nil
+		}
+	}
+	return pickFolder()
 }
 
 // ---------- running the window ----------
