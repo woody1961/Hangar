@@ -64,6 +64,8 @@ The full guide is [docs/USER-GUIDE.md](docs/USER-GUIDE.md).
 It holds `settings.json` and a `data` folder: the database (`ships.db`), your pictures, backups, what "Start fresh"
 set aside, and the saved sign-in of Hangar's RSI window (private: don't share it). If the program sits in a folder
 that already holds Hangar's `settings.json` or `data` folder, it uses that folder instead (a portable copy). The
+data folder can also live on a shared drive and be opened from more than one computer, one at a time; Hangar warns
+when it is open on another computer (see the [user guide](docs/USER-GUIDE.md#sharing-one-data-folder-between-computers)). The
 environment variables `HANGAR_HOME`, `SHIPS_DATA`, `SHIPS_PORT`, `HANGAR_BROWSER` and `HANGAR_SETTINGS` override
 these.
 

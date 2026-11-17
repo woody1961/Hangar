@@ -327,6 +327,20 @@ A backup holds the database but **not the pictures**. To protect pictures too, b
 Choose **Restore…** on a backup. Hangar checks that the file is healthy, saves your current database as a
 "Before a restore" copy, then replaces the database with the chosen one. If you change your mind, restore that copy.
 
+### Using a hangar that is somewhere else
+
+To use a hangar that is already in another folder (a copy on a shared drive, say), type or choose it under *Data
+folder* and click **Use this folder…** (the button says so when the folder holds a hangar). You can choose either
+the Hangar folder itself (the one with `settings.json` and a `data` folder inside) or its `data` folder. Hangar offers
+to restart, and opens that hangar from then on. Nothing is copied and your current folder is left as it is.
+
+### Sharing one data folder between computers
+
+You can keep the data folder on a shared drive and open it from a Mac and a Windows PC, **one at a time**. Hangar keeps
+a small note in the data folder while it is open; if another computer has the folder open, a red warning appears at
+the top of the window. Close Hangar on the other computer first: two copies changing one database at the same time can
+damage it. The saved RSI sign-in moves with the folder, so you may need to sign in to RSI again on each computer.
+
 ### Moving the data folder
 
 **Move data…** copies the whole folder (database, pictures, backups, archive and RSI sign-in) to a folder you choose.
@@ -394,7 +408,15 @@ have no picture; those show a symbol. A picture that failed to download is tried
 
 **I deleted a package by mistake.** Restore the most recent backup, then import again.
 
-**I don't see my old data.** Use **Use an existing Hangar data folder…** on the welcome screen (section 9).
+**I don't see my old data.** Use **Use an existing Hangar data folder…** on the welcome screen, or **Use this
+folder…** in Settings (section 9).
+
+**The data folder goes back to the old one after restarting.** The switch didn't happen: the message under the
+*Data folder* controls says why (for example a folder with other things in it). Choose the Hangar folder or its `data`
+folder, click **Use this folder…**, and let Hangar restart.
+
+**A red warning says the data folder is open on another computer.** Close Hangar there. If that computer is off or
+Hangar crashed there, the warning goes away by itself within a few minutes.
 
 ## 14. Good to know
 

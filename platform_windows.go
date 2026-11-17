@@ -15,8 +15,7 @@ func ownedByMe(folder string) bool { return false }
 // restartSelf starts a fresh copy of the program in this window, then ends this one.
 func restartSelf(exe string, args, env []string) error {
 	cmd := exec.Command(exe, args[1:]...)
-	cmd.Env = env
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	cmd.Env = env // a windowed program has no console to pass on, so none is given
 	if err := cmd.Start(); err != nil {
 		return err
 	}

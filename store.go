@@ -133,7 +133,7 @@ func openDB(path string, readOnly bool) (*sql.DB, error) {
 	if readOnly {
 		q.Add("mode", "ro")
 	}
-	conn, err := sql.Open("sqlite", "file:"+filepath.ToSlash(path)+"?"+q.Encode())
+	conn, err := sql.Open("sqlite", sqliteName(runtime.GOOS, path, readOnly, q))
 	if err != nil {
 		return nil, err
 	}
@@ -143,6 +143,30 @@ func openDB(path string, readOnly bool) (*sql.DB, error) {
 		return nil, err
 	}
 	return conn, nil
+}
+
+// sqliteName turns a file path into the name SQLite opens. On Windows it is the plain path (a network path such as
+// \\server\share\Hangar would read as "file://server/..." in SQLite's address form, meaning a file on another
+// machine, and be refused; Windows paths can't hold the "?" the query starts with). Elsewhere it is SQLite's address
+// form, with "%", "?" and "#" in folder names escaped, so read-only opening can be asked for.
+func sqliteName(goos, path string, readOnly bool, q url.Values) string {
+	if goos == "windows" {
+		if readOnly {
+			q.Add("_query_only", "1")
+		}
+		return path + "?" + q.Encode()
+	}
+	if readOnly {
+		q.Add("mode", "ro")
+	}
+	if goos == "darwin" {
+		// On macOS SQLite picks its file locking by the kind of disk; for a network share (smbfs) it picks Apple's
+		// AFP locking, which this pure-Go SQLite doesn't implement (it stops the program), and SMB shares often refuse
+		// POSIX record locks. Whole-file (flock) locks work on local disks and on network shares alike.
+		q.Add("vfs", "unix-flock")
+	}
+	p := strings.NewReplacer("%", "%25", "?", "%3f", "#", "%23").Replace(filepath.ToSlash(path))
+	return "file://" + p + "?" + q.Encode()
 }
 
 func connect() (*sql.DB, error) {

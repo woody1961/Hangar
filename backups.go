@@ -139,6 +139,31 @@ func dailyBackup() {
 
 func isoMinutes(t time.Time) string { return t.Format("2006-01-02T15:04") }
 
+// hangarDataFolder accepts either a data folder (holding ships.db) or a Hangar folder holding one in "data" (as
+// copied from ~/Library/Application Support/Hangar or %AppData%\Hangar), and returns the data folder.
+func hangarDataFolder(path string) string {
+	if !fileExists(filepath.Join(path, "ships.db")) && fileExists(filepath.Join(path, "data", "ships.db")) {
+		return filepath.Join(path, "data")
+	}
+	return path
+}
+
+// countHangar opens a database read-only and counts its packages and items, or says why it can't.
+func countHangar(path string) (packages, items int64, err error) {
+	c, err := openDB(path, true)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer c.Close()
+	if err := c.QueryRow("SELECT COUNT(*) FROM packages").Scan(&packages); err != nil {
+		return 0, 0, err
+	}
+	if err := c.QueryRow("SELECT COUNT(*) FROM items").Scan(&items); err != nil {
+		return 0, 0, err
+	}
+	return packages, items, nil
+}
+
 // countRows reads how many packages and items a database file holds (nil, nil when it can't be read).
 func countRows(path string) (any, any) {
 	c, err := openDB(path, true)
@@ -379,7 +404,7 @@ func moveDataDir(targetArg any) (map[string]any, error) {
 	if !ok || strings.TrimSpace(s) == "" {
 		return nil, userErr("Enter a folder")
 	}
-	target := absPath(expandUser(strings.TrimSpace(s)))
+	target := hangarDataFolder(absPath(expandUser(strings.TrimSpace(s))))
 	if inside(target, dataDir) || inside(dataDir, target) {
 		return nil, userErr("Choose a folder that is not inside the current data folder, and does not contain it")
 	}
@@ -397,8 +422,8 @@ func moveDataDir(targetArg any) (map[string]any, error) {
 	}
 	existing := filepath.Join(target, "ships.db")
 	if fileExists(existing) {
-		if p, _ := countRows(existing); p == nil {
-			return nil, userErr("The database in that folder isn't a Hangar database")
+		if _, _, err := countHangar(existing); err != nil {
+			return nil, userErr("Hangar couldn't open the database in that folder (%v)", err)
 		}
 		if err := setInternalSettings(map[string]any{"data_dir": target, "previous_data_dir": nil}); err != nil {
 			return nil, err
@@ -406,7 +431,7 @@ func moveDataDir(targetArg any) (map[string]any, error) {
 		return map[string]any{"mode": "switch", "target": target, "previous": nil}, nil
 	}
 	if entries, _ := os.ReadDir(target); len(entries) > 0 {
-		return nil, userErr("That folder isn't empty. Choose an empty folder, or one that already holds a Hangar database.")
+		return nil, userErr("That folder isn't empty and has no Hangar data in it. Choose an empty folder, or a Hangar folder (or its data folder) to switch to.")
 	}
 	if err := copyDatabase(store, existing); err != nil {
 		return nil, err

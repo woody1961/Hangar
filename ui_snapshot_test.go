@@ -82,6 +82,11 @@ func TestSnapshots(t *testing.T) {
 	}
 	a.openSettings()
 	render("settings", 1440, 900)
+	if share := os.Getenv("HANGAR_SNAPSHOT_SHARE"); share != "" {
+		a.settingsDlg.movePath.SetText(share)
+		a.settingsDlg.sheet.list.Position.First, a.settingsDlg.sheet.list.Position.Offset = 0, 1700
+		render("settings-folder", 1440, 900)
+	}
 	a.settingsDlg = nil
 	a.rsiDlg = &rsiDialog{stop: make(chan struct{}), checked: true, browser: "Brave Browser", showBookmark: true}
 	render("rsi", 1440, 900)

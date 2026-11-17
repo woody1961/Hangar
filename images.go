@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"gioui.org/op/paint"
 	xdraw "golang.org/x/image/draw"
@@ -26,11 +27,14 @@ type thumbKey struct {
 }
 
 type thumbEntry struct {
-	op     paint.ImageOp
-	ok     bool
-	used   uint64
-	loaded bool
+	op       paint.ImageOp
+	ok       bool
+	used     uint64
+	loaded   bool
+	failedAt time.Time
 }
+
+const thumbRetry = 20 * time.Second
 
 type thumbCache struct {
 	mu         sync.Mutex
@@ -52,6 +56,10 @@ func (c *thumbCache) get(name string, size image.Point) (paint.ImageOp, bool) {
 	c.clock++
 	if e, found := c.entries[k]; found {
 		e.used = c.clock
+		if e.loaded && !e.ok && time.Since(e.failedAt) > thumbRetry {
+			e.loaded, e.failedAt = false, time.Time{}
+			go c.load(k, e)
+		}
 		return e.op, e.ok
 	}
 	e := &thumbEntry{used: c.clock}
@@ -92,6 +100,9 @@ func (c *thumbCache) load(k thumbKey, e *thumbEntry) {
 	}
 	c.mu.Lock()
 	e.op, e.ok, e.loaded = op, ok, true
+	if !ok {
+		e.failedAt = time.Now()
+	}
 	c.mu.Unlock()
 	if c.invalidate != nil {
 		c.invalidate()

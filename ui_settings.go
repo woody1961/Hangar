@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -21,12 +22,17 @@ type settingsDialog struct {
 	port, daily, snapshots, movePath                           widget.Editor
 	restart, pick, move, delPrev, backupNow, openBackups, done widget.Clickable
 	restore                                                    map[string]*widget.Clickable
+	pathResult                                                 chan [2]string
 	busy                                                       bool
+	folderMsg                                                  string // what the data-folder controls did, shown beside them
+	folderErr                                                  bool
+	checkedPath                                                string // the folder last looked at, and what it holds
+	pathHangar                                                 string
 }
 
 func (a *App) openSettings() {
 	a.settings = settingsValues()
-	d := &settingsDialog{restore: map[string]*widget.Clickable{}}
+	d := &settingsDialog{restore: map[string]*widget.Clickable{}, pathResult: make(chan [2]string, 4)}
 	singleLine(&d.port, fmt.Sprint(a.settings["port"]))
 	singleLine(&d.daily, fmt.Sprint(a.settings["backups_daily"]))
 	singleLine(&d.snapshots, fmt.Sprint(a.settings["backups_snapshots"]))
@@ -45,6 +51,35 @@ func (d *settingsDialog) refreshBackups(a *App) {
 }
 
 func (d *settingsDialog) say(text string, isErr bool) { d.msg, d.msgErr = text, isErr }
+
+func (d *settingsDialog) sayFolder(text string, isErr bool) { d.folderMsg, d.folderErr = text, isErr }
+
+// lookAtFolder notes whether the folder typed or chosen already holds a hangar (a data folder, or a Hangar folder with
+// one in "data"), so the button can say what it will do. It looks only when the text changes: a network share can be slow.
+func (d *settingsDialog) lookAtFolder(path string) {
+	if path == d.checkedPath {
+		return
+	}
+	d.checkedPath, d.pathHangar = path, ""
+	if path == "" {
+		return
+	}
+	go func(path string) {
+		dir := hangarDataFolder(absPath(expandUser(path)))
+		holds := ""
+		if fileExists(filepath.Join(dir, "ships.db")) {
+			if p, i, err := countHangar(filepath.Join(dir, "ships.db")); err == nil {
+				holds = fmt.Sprintf("%d packages, %d items", p, i)
+			} else {
+				holds = "a database Hangar can't open"
+			}
+		}
+		d.pathResult <- [2]string{path, holds}
+		if thumbs.invalidate != nil {
+			thumbs.invalidate() // wakes the window to show it
+		}
+	}(path)
+}
 
 // save stores one or more settings at once; the screen follows what was really saved.
 func (d *settingsDialog) save(a *App, changes map[string]any) {
@@ -109,28 +144,44 @@ func (d *settingsDialog) layout(gtx C, a *App) {
 			d.say(errorText(err), true)
 		}
 	}
+	d.lookAtFolder(strings.TrimSpace(d.movePath.Text()))
+	for done := false; !done; {
+		select {
+		case r := <-d.pathResult:
+			if r[0] == d.checkedPath {
+				d.pathHangar = r[1]
+			}
+		default:
+			done = true
+		}
+	}
+	switchTo := d.pathHangar != "" && d.pathHangar != "a database Hangar can't open"
 	if d.pick.Clicked(gtx) && !d.busy {
-		d.say("Waiting for you to choose a folder…", false)
+		d.sayFolder("Waiting for you to choose a folder…", false)
 		go func() {
 			path, err := a.chooseFolder()
 			a.post(func() {
 				switch {
 				case err != nil:
-					d.say(errorText(err), true)
+					d.sayFolder(errorText(err), true)
 				case path != "":
 					d.movePath.SetText(path)
-					d.say("Now click Move data… to copy your data there.", false)
+					d.sayFolder("", false)
 				default:
-					d.say("", false)
+					d.sayFolder("", false)
 				}
 			})
 		}()
 	}
 	if d.move.Clicked(gtx) && !d.busy {
 		path := strings.TrimSpace(d.movePath.Text())
-		if path == "" {
-			d.say("Type the folder to move your data to.", true)
-		} else {
+		switch {
+		case path == "":
+			d.sayFolder("Type or choose the folder first.", true)
+		case switchTo:
+			a.confirmThen("Use the hangar in:\n"+path+"\n("+d.pathHangar+")\n\nHangar switches to it and restarts. Nothing is copied, and your current data folder is left as it is.",
+				"Use this folder", false, func() { d.moveData(a, path) })
+		default:
 			a.confirmThen("Copy your data to:\n"+path+"\n\nHangar will use that folder from the next restart. Your current data folder is left untouched until you choose to delete it.",
 				"Move data", false, func() { d.moveData(a, path) })
 		}
@@ -400,8 +451,35 @@ func (d *settingsDialog) layout(gtx C, a *App) {
 						hspace(8),
 						layout.Rigid(func(gtx C) D { return l.button(gtx, &d.pick, "Choose folder…", btnOpts{disabled: d.busy}) }),
 						hspace(8),
-						layout.Rigid(func(gtx C) D { return l.button(gtx, &d.move, "Move data…", btnOpts{disabled: d.busy}) }),
+						layout.Rigid(func(gtx C) D {
+							label := "Move data…"
+							if switchTo {
+								label = "Use this folder…"
+							}
+							return l.button(gtx, &d.move, label, btnOpts{disabled: d.busy})
+						}),
 					)
+				}),
+				layout.Rigid(func(gtx C) D {
+					// what the folder holds, and what the last choice or move did, right where it happened
+					msg, c := d.folderMsg, l.p.text2
+					if d.folderErr {
+						c = l.p.danger
+					}
+					if msg == "" && d.checkedPath != "" {
+						switch {
+						case switchTo:
+							msg = "That folder already holds a hangar (" + d.pathHangar + "). Use this folder… switches Hangar to it."
+						case d.pathHangar != "":
+							msg, c = "That folder holds "+d.pathHangar+".", l.p.danger
+						default:
+							msg = "Move data… copies your hangar there and switches to it."
+						}
+					}
+					if msg == "" {
+						return D{}
+					}
+					return layout.Inset{Top: 6}.Layout(gtx, func(gtx C) D { return l.text(gtx, msg, textStyle{size: 12, color: c}) })
 				}),
 				layout.Rigid(func(gtx C) D {
 					if !envData {
@@ -588,7 +666,7 @@ func (d *settingsDialog) confirmRestore(a *App, name string) {
 
 func (d *settingsDialog) moveData(a *App, path string) {
 	d.busy = true
-	d.say("Copying…", false)
+	d.sayFolder("Working…", false)
 	go func() {
 		window.close() // its saved sign-in lives in the data folder and is copied too
 		dbMu.Lock()
@@ -598,15 +676,16 @@ func (d *settingsDialog) moveData(a *App, path string) {
 			d.busy = false
 			a.applySettings(settingsValues())
 			if err != nil {
-				d.say(errorText(err), true)
+				d.sayFolder(errorText(err), true)
 				return
 			}
 			d.movePath.SetText("")
+			msg := fmt.Sprintf("Copied your hangar to\n%v\n\nHangar uses it from the next start.", r["target"])
 			if r["mode"] == "switch" {
-				d.say("That folder already holds Hangar data, so Hangar will use it after the restart. Nothing was copied.", false)
-			} else {
-				d.say(fmt.Sprintf("Copied. Hangar will use %v after the restart.", r["target"]), false)
+				msg = fmt.Sprintf("Hangar will use the hangar in\n%v\nfrom the next start. Nothing was copied.", r["target"])
 			}
+			d.sayFolder("Done: Hangar uses the new folder after a restart.", false)
+			a.confirmThen(msg, "Restart now", false, a.restartApp)
 		})
 	}()
 }
@@ -621,9 +700,7 @@ func (a *App) useExistingFolder() {
 			}
 			return
 		}
-		if !fileExists(path+string(osSep)+"ships.db") && fileExists(path+string(osSep)+"data"+string(osSep)+"ships.db") {
-			path = path + string(osSep) + "data" // the Hangar program folder was chosen: its data folder is inside
-		}
+		path = hangarDataFolder(path) // a Hangar folder was chosen: its data folder is inside
 		if !fileExists(path + string(osSep) + "ships.db") {
 			a.post(func() { a.toast("That folder has no Hangar database (ships.db) in it.") })
 			return

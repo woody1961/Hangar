@@ -97,6 +97,7 @@ func main() {
 
 // restartApp starts Hangar again in place, e.g. after the data folder or the port changed.
 func (a *App) restartApp() {
+	releaseInUse()
 	window.close()
 	if receiver != nil {
 		receiver.Close()

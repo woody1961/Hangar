@@ -520,6 +520,7 @@ func (a *App) main(gtx C) D {
 			})
 		}),
 		layout.Rigid(a.look.divider),
+		layout.Rigid(a.inUseBanner),
 		layout.Rigid(a.ownership),
 		layout.Rigid(a.filterBar),
 		layout.Flexed(1, func(gtx C) D {
@@ -579,6 +580,20 @@ func magnifier(gtx C, c rgbaColor) D {
 	p.LineTo(f32pt(float32(s)*0.95, float32(s)*0.95))
 	paint.FillShape(gtx.Ops, c, clip.Stroke{Path: p.End(), Width: float32(gtx.Dp(1.8))}.Op())
 	return D{Size: image.Pt(s, s)}
+}
+
+func (a *App) inUseBanner(gtx C) D {
+	who := otherUser()
+	if who == "" {
+		return D{}
+	}
+	return layout.Inset{Top: 12, Left: 18, Right: 18}.Layout(gtx, func(gtx C) D {
+		gtx.Constraints.Min.X = gtx.Constraints.Max.X
+		return background(gtx, a.look.p.noneBg, a.look.p.danger, 8, pad(10, 14, 10, 14, func(gtx C) D {
+			gtx.Constraints.Min.X = gtx.Constraints.Max.X
+			return a.look.text(gtx, "⚠ "+inUseWarning(who), textStyle{size: 13, color: a.look.p.danger, weight: font.SemiBold})
+		}))
+	})
 }
 
 func (a *App) ownership(gtx C) D {
@@ -770,6 +785,7 @@ func runWindow() {
 		a.reload()
 		startReceiver(a)
 		go a.watchPictures()
+		watchInUse(w.Invalidate)
 	}
 	go func() {
 		var ops op.Ops
@@ -778,6 +794,7 @@ func runWindow() {
 			a.explorer.ListenEvents(e)
 			switch e := e.(type) {
 			case app.DestroyEvent:
+				releaseInUse()
 				window.close() // Hangar's RSI window closes with it (its sign-in is kept)
 				os.Exit(0)
 			case app.FrameEvent:
